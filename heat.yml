@@ -81,7 +81,7 @@ resources:
       - security_group
     type: OS::Neutron::Port
     properties:
-      network_id: { get_param: net-id } # sutdents.net ID
+      network_id: { get_param: net_id } # sutdents.net ID
       security_groups:
         - default
         - { get_resource: security_group }
