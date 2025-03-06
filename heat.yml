@@ -3,6 +3,10 @@ heat_template_version: 2015-04-30
 description: Infrastructure stack with compute, network, and storage resources
 
 parameters:
+  instance_name:
+    type: string
+    description: name of the instance (not the stack)
+
   flavor_name:
     type: string
     description: flavor type of instance (available on openstack server). This is ephemeral disk (not persisted).
@@ -60,6 +64,7 @@ resources:
   my_instance:
     type: OS::Nova::Server
     properties:
+      name: { get_param: instance_name}
       flavor: { get_param: flavor_name }
       # image: { get_param: image_name }
       key_name: { get_param: key }
