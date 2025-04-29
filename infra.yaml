@@ -1,0 +1,66 @@
+- name: Create instance
+  hosts: all
+  connection: local
+  collections:
+    - community.general
+  vars:
+    tf_dir: ./tf
+    tf_rc: tf.rc
+  tasks:
+    - name: Run tf
+      terraform:
+        project_path: "{{ tf_dir }}"
+        force_init: true # run terraform init if state file not found
+      register:
+        tfdata
+    - name: Add host to ansible ini 
+      ansible.builtin.add_host:
+        name: prod
+        groups: nodes
+        ansible_ssh_host: "{{ tfdata.outputs.instance_ip.value }}"
+        ansible_port: 22
+        ansible_user: ubuntu
+        ansible_ssh_private_key_file: ~/.ssh/tf-key
+
+- name: Wait for instance creating
+  hosts: localhost
+  connection: local     
+  tasks:
+    - name: Wait for a ssh port become available
+      wait_for:
+        host: "{{ tfdata.outputs.instance_ip.value }}"
+        port: 22
+
+- name: Install 
+- name: Install postgres
+  hosts: node_prod
+  remote_user: ubuntu    
+  tasks:
+    - name: Prepare vars
+      ansible.builtin.set_fact:
+        postgresql_version: 14 
+        postgresql_service_name: postgresql
+        postgresql_listen_addresses: "*"
+        cacheable: yes
+
+    - name: Install PostgreSQL (Debian/Ubuntu)
+      become: true
+      ansible.builtin.apt:
+        name:
+          - postgresql-{{ postgresql_version }}
+          - postgresql-contrib
+          - libpq-dev
+          - python3-psycopg2 
+        state: present
+        update_cache: yes
+
+    - name: Enable Postgres
+      ansible.builtin.service:
+        name: "{{ postgresql_service_name }}"
+        state: started
+        enabled: yes
+        
+    - name: Set Postgres to listen on any addresses
+      ansible.builtin.shell: |
+       sudo -u postgres psql -c 'ALTER SYSTEM SET listen_addresses="{{ postgresql_listen_addresses }}";'
+       sudo -u postgres psql -c 'SELECT pg_reload_conf();'
