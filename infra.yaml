@@ -1,30 +1,38 @@
-#Requirements:
+# OS: Debian
+# Requirements:
 # 1. Preinstalled Openstack and params exported to global env.
 # 2. Ansible, Terraform installed. .terraformrc is at /home/user.
-# 3. .tfvars INSIDE terraform project path. 
-# 4. Key for instance was created in advance on openstack cluster. Use StrictHostKeyChecking=no is a must.
-# 5. Check for apt packages at installation step. At the time of this code, the only postgresql version that apt supports is 15.
-# 6. Check default user. For Ubuntu it's ubuntu, for Debian it's debian.
+# 3. Key for instance was created in advance on openstack cluster. Use StrictHostKeyChecking=no is a must.
+# 4. Check for apt packages at installation step. At the time of this code, the only postgresql version that apt supports is 15.
+# 5. Check default user. For Ubuntu it's ubuntu, for Debian it's debian.
 - name: Create instance
   hosts: all
   connection: local
-  gather_facts: yes
+  gather_facts: no #first one, no fact
   collections:
     - community.general
   vars:
     tf_dir: tf
     tf_vars: .tfvars
+    tf_rc: .terraformrc
     ssh_user: debian
     ssh_private_key: "~/nguen-tf.pem"
+  roles:
+    
   tasks:
+    - name: Export .terraformrc
+      copy:
+        dest: "~/"
+        src: "{{ tf_rc }}"
+        
     - name: Get project path
-      ansible.builtin.command:
+      command:
         cmd: "readlink -f {{ tf_dir }}"
       register: folder_abs
       changed_when: False
       
     - name: Get project path
-      ansible.builtin.command:
+      command:
         cmd: "echo {{ folder_abs.stdout }}"
         
     - name: Ensure Terraform directory exists
@@ -32,14 +40,24 @@
         path: "{{ folder_abs.stdout }}"
         state: directory
 
+
+
     - name: Run tf
       community.general.terraform:
         project_path: "{{ folder_abs.stdout }}"
         variables_files: "{{ tf_vars }}"
+        # variables:
+        #   instance_name: "nguen-tf"
+        #   flavor_name: "m1.small"
+        #   key: "nguen-tf"
+        #   image_name: "debian-12"
+        #   net_id: "17eae9b6-2168-4a07-a0d3-66d5ad2a9f0e"
+        #   volume_name: "2025-nguen-tf-volume"
+        #   volume_size: 20
         force_init: true # run terraform init if state file not found
       register:
         tfdata
-
+  
     - name: Extract instance IP
       set_fact:
         instance_ip: "{{ tfdata.outputs.instance_ip.value }}"
@@ -50,7 +68,7 @@
         port: 22
 
     - name: Add host to ansible ini 
-      ansible.builtin.add_host:
+      add_host:
         name: "{{ instance_ip }}"
         groups: prod
         ansible_ssh_host: "{{ instance_ip }}"
@@ -59,18 +77,17 @@
         ansible_ssh_private_key_file: "{{ ssh_private_key }}"
         ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
 
-- name: Install postgres
+- name: Install Postgresql
   hosts: prod
   become: yes #sudo
-  gather_facts: yes
-  remote_user: ubuntu    
   tasks:
     - name: Update apt cache
       apt:
         update_cache: yes
       when: ansible_os_family == "Debian"
-    - name: Prepare vars
-      ansible.builtin.set_fact:
+
+    - name: Set env vars
+      set_fact:
         postgresql_version: 15 
         postgresql_service_name: postgresql
         postgresql_listen_addresses: "*"
@@ -78,23 +95,83 @@
 
     - name: Install PostgreSQL (Debian/Ubuntu)
       become: true
-      ansible.builtin.apt:
+      apt:
         name:
           - postgresql-{{ postgresql_version }}
           - postgresql-contrib
           - libpq-dev
           - python3-psycopg2 
         state: present
-        update_cache: yes
+        update_cache: yes #install -> update cache
 
     - name: Enable Postgres
-      ansible.builtin.service:
+      service:
         name: "{{ postgresql_service_name }}"
         state: started
         enabled: yes
         
     - name: Set Postgres to listen on any addresses
-      ansible.builtin.shell: |
+      shell: |
        sudo -u postgres psql -c 'ALTER SYSTEM SET listen_addresses="{{ postgresql_listen_addresses }}";'
        sudo -u postgres psql -c 'SELECT pg_reload_conf();'
-  
+      
+- name: Install Docker
+  hosts: prod
+  become: yes #sudo
+  # gather_facts: yes
+  # remote_user: debian   
+  vars:
+    docker_prerequisites:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - software-properties-common
+
+    docker_packages: #https://docs.docker.com/engine/install/debian/
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin 
+      - docker-compose-plugin
+
+  tasks:
+    - name: Install required system packages
+      package:
+        name: "{{ docker_prerequisites }}"
+        state: present
+        update_cache: yes
+
+    - name: Add Docker GPG apt key (Debian/Ubuntu)
+      # when: ansible_os_family == "Debian"
+      apt_key:
+        url: https://download.docker.com/linux/{{ ansible_distribution }}/gpg
+        state: present
+
+    - name: Add Docker repository (Debian/Ubuntu)
+      # when: ansible_os_family == "Debian"
+      apt_repository:
+        repo: deb [arch={{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable #https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_vars_facts.html#ansible-facts
+        state: present
+        filename: docker
+
+    # Install Docker
+    - name: Install Docker and Docker compose
+      package:
+        name: "{{ docker_packages }}"
+        state: present
+        update_cache: yes
+      notify: restart docker
+
+    - name: Create Docker config directory #https://docs.docker.com/engine/install/debian/#install-using-the-repository
+      file:
+        path: /etc/docker
+        state: directory
+        mode: '0755'
+
+  handlers:
+    - name: restart docker
+      service:
+        name: docker
+        state: restarted
