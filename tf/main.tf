@@ -1,3 +1,16 @@
+terraform {
+  required_providers {
+    openstack = {
+      source  = "terraform-provider-openstack/openstack"
+      version = "~> 1.51.0"
+    }
+  }
+}
+
+provider "openstack" {
+}
+
+
 # Resources
 resource "openstack_networking_secgroup_v2" "security_group" {
   name        = "${var.var_prefix}-security-group"
@@ -54,20 +67,15 @@ resource "openstack_networking_secgroup_rule_v2" "security_group_rule_springboot
   security_group_id = openstack_networking_secgroup_v2.security_group.id
 }
 
-resource "openstack_blockstorage_volume_v2" "server_volume" {
+resource "openstack_blockstorage_volume_v3" "server_volume" {
   name  = var.volume_name
   size  = var.volume_size
   image_id = var.image_name
 }
 
-resource "openstack_compute_keypair_v2" "admin_keypair" {
-  name       = "${var.key}"
-}
-
 resource "openstack_networking_port_v2" "server_port" {
   network_id     = var.net_id
   security_group_ids = [
-    "default",
     openstack_networking_secgroup_v2.security_group.id
   ]
 }
@@ -83,7 +91,7 @@ resource "openstack_compute_instance_v2" "nguen_instance" {
   }
 
   block_device {
-    uuid                  = openstack_blockstorage_volume_v2.server_volume.id
+    uuid                  = openstack_blockstorage_volume_v3.server_volume.id
     source_type           = "volume"
     boot_index            = 0
     destination_type      = "volume"

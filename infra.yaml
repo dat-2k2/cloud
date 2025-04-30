@@ -1,44 +1,77 @@
+#Requirements:
+# 1. Preinstalled Openstack and params exported to global env.
+# 2. Ansible, Terraform installed. .terraformrc is at /home/user.
+# 3. .tfvars INSIDE terraform project path. 
+# 4. Key for instance was created in advance on openstack cluster. Use StrictHostKeyChecking=no is a must.
+# 5. Check for apt packages at installation step. At the time of this code, the only postgresql version that apt supports is 15.
+# 6. Check default user. For Ubuntu it's ubuntu, for Debian it's debian.
 - name: Create instance
   hosts: all
   connection: local
+  gather_facts: yes
   collections:
     - community.general
   vars:
-    tf_dir: ./tf
-    tf_rc: tf.rc
+    tf_dir: tf
+    tf_vars: .tfvars
+    ssh_user: debian
+    ssh_private_key: "~/nguen-tf.pem"
   tasks:
+    - name: Get project path
+      ansible.builtin.command:
+        cmd: "readlink -f {{ tf_dir }}"
+      register: folder_abs
+      changed_when: False
+      
+    - name: Get project path
+      ansible.builtin.command:
+        cmd: "echo {{ folder_abs.stdout }}"
+        
+    - name: Ensure Terraform directory exists
+      file:
+        path: "{{ folder_abs.stdout }}"
+        state: directory
+
     - name: Run tf
-      terraform:
-        project_path: "{{ tf_dir }}"
+      community.general.terraform:
+        project_path: "{{ folder_abs.stdout }}"
+        variables_files: "{{ tf_vars }}"
         force_init: true # run terraform init if state file not found
       register:
         tfdata
-    - name: Add host to ansible ini 
-      ansible.builtin.add_host:
-        name: prod
-        groups: nodes
-        ansible_ssh_host: "{{ tfdata.outputs.instance_ip.value }}"
-        ansible_port: 22
-        ansible_user: ubuntu
-        ansible_ssh_private_key_file: ~/.ssh/tf-key
 
-- name: Wait for instance creating
-  hosts: localhost
-  connection: local     
-  tasks:
+    - name: Extract instance IP
+      set_fact:
+        instance_ip: "{{ tfdata.outputs.instance_ip.value }}"
+
     - name: Wait for a ssh port become available
       wait_for:
-        host: "{{ tfdata.outputs.instance_ip.value }}"
+        host: "{{ instance_ip }}"
         port: 22
 
-- name: Install 
+    - name: Add host to ansible ini 
+      ansible.builtin.add_host:
+        name: "{{ instance_ip }}"
+        groups: prod
+        ansible_ssh_host: "{{ instance_ip }}"
+        ansible_port: 22
+        ansible_user: "{{ ssh_user }}"
+        ansible_ssh_private_key_file: "{{ ssh_private_key }}"
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+
 - name: Install postgres
-  hosts: node_prod
+  hosts: prod
+  become: yes #sudo
+  gather_facts: yes
   remote_user: ubuntu    
   tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
     - name: Prepare vars
       ansible.builtin.set_fact:
-        postgresql_version: 14 
+        postgresql_version: 15 
         postgresql_service_name: postgresql
         postgresql_listen_addresses: "*"
         cacheable: yes
@@ -64,3 +97,4 @@
       ansible.builtin.shell: |
        sudo -u postgres psql -c 'ALTER SYSTEM SET listen_addresses="{{ postgresql_listen_addresses }}";'
        sudo -u postgres psql -c 'SELECT pg_reload_conf();'
+  
