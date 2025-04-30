@@ -146,7 +146,7 @@
     - name: Add Docker GPG apt key (Debian/Ubuntu)
       # when: ansible_os_family == "Debian"
       apt_key:
-        url: https://download.docker.com/linux/{{ ansible_distribution }}/gpg
+        url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
         state: present
 
     - name: Add Docker repository (Debian/Ubuntu)
