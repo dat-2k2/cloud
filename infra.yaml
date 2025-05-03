@@ -15,6 +15,7 @@
     tf_dir:
     ssh_user:
     ssh_private_key: 
+    tf_vars: 
   roles:
     
   tasks:
@@ -37,7 +38,7 @@
     - name: Run tf
       community.general.terraform:
         project_path: "{{ folder_abs.stdout }}"
-        variables_files: ".tfvars"
+        variables_files: "{{ tf_vars }}"
         # variables:
         #   instance_name: "nguen-tf"
         #   flavor_name: "m1.small"
