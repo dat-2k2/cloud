@@ -11,18 +11,19 @@
   gather_facts: no #first one, no fact
   collections:
     - community.general
-  vars:
-    tf_dir:
-    ssh_user:
-    ssh_private_key: 
-    tf_vars: 
+  # vars:
+  #   tf_dir:
+  #   ssh_user:
+  #   ssh_private_key: 
+  #   tf_vars: 
+  #   tf_rc:
   roles:
     
   tasks:
     - name: Export .terraformrc
       copy:
         dest: "~/"
-        src: ".terraformrc"
+        src: "{{ tf_rc }}"
         
     - name: Get project path
       command:
