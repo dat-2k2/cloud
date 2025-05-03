@@ -18,9 +18,11 @@
   #   ssh_private_key: 
   #   tf_vars: 
   #   tf_rc:
-  roles:
-    
+  #   os_rc:
   tasks:
+    - name: Export openstack.rc
+      command:
+        cmd: ". {{ os_rc }}"
     - name: Export .terraformrc
       copy:
         dest: "~/"
