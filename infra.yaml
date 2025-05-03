@@ -21,7 +21,7 @@
     - name: Export .terraformrc
       copy:
         dest: "~/"
-        src: "{{ tf_rc }}"
+        src: ".terraformrc"
         
     - name: Get project path
       command:
