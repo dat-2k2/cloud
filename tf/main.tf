@@ -7,8 +7,7 @@ terraform {
   }
 }
 
-provider "openstack" {
-}
+
 
 
 # Resources

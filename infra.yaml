@@ -18,11 +18,9 @@
   #   ssh_private_key: 
   #   tf_vars: 
   #   tf_rc:
-  #   os_rc:
+  #   provider_tf:
   tasks:
-    - name: Export openstack.rc
-      command:
-        cmd: ". {{ os_rc }}"
+
     - name: Export .terraformrc
       copy:
         dest: "~/"
@@ -32,6 +30,11 @@
       file:
         path: "{{ tf_dir }}"
         state: directory
+
+    - name: Copy provider.tf
+      copy:
+        dest: "{{ tf_dir }}/provider.tf"
+        src: "{{ provider_tf }}"
 
     - name: Run tf
       community.general.terraform:
