@@ -30,12 +30,6 @@
       file:
         path: "{{ tf_dir }}"
         state: directory
-
-    - name: Copy provider.tf
-      copy:
-        dest: "{{ tf_dir }}/provider.tf"
-        src: "{{ provider_tf }}"
-      changed_when: false
       
     - name: Copy terraform.tfvars
       copy:

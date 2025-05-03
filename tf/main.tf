@@ -7,6 +7,9 @@ terraform {
   }
 }
 
+provider "openstack" {
+}
+
 # Resources
 resource "openstack_networking_secgroup_v2" "security_group" {
   name        = "${var.var_prefix}-security-group"
