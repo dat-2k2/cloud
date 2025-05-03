@@ -2,13 +2,10 @@ terraform {
   required_providers {
     openstack = {
       source  = "terraform-provider-openstack/openstack"
-      version = "~> 1.51.0"
+      version = "~> 1.54.1"
     }
   }
 }
-
-
-
 
 # Resources
 resource "openstack_networking_secgroup_v2" "security_group" {
