@@ -1,5 +1,5 @@
 pipeline {
-    agent nguen
+    agent { label 'nguen' }
     stages {
         environment { 
             ANSIBLE = '~/.local/bin/ansible'

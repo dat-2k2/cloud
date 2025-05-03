@@ -34,8 +34,6 @@
         path: "{{ folder_abs.stdout }}"
         state: directory
 
-
-
     - name: Run tf
       community.general.terraform:
         project_path: "{{ folder_abs.stdout }}"
