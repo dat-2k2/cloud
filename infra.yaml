@@ -36,6 +36,10 @@
         path: "{{ folder_abs.stdout }}"
         state: directory
 
+    - name: Log project path
+      command:
+        cmd: "echo {{ folder_abs.stdout }}"
+
     - name: Run tf
       community.general.terraform:
         project_path: "{{ folder_abs.stdout }}"
