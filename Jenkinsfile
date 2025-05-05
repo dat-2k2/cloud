@@ -7,7 +7,7 @@ pipeline {
         stage("Create instance") {
             options {
                 // Timeout counter starts AFTER agent is allocated
-                timeout(time: 4, unit: 'MINUTES')
+                timeout(time: 15, unit: 'MINUTES')
             }            
             steps {
                 build(job: 'nguen-infra')
@@ -20,7 +20,7 @@ pipeline {
         stage("Build") {
             options {
                 // Timeout counter starts AFTER agent is allocated
-                timeout(time: 2, unit: 'MINUTES')
+                timeout(time: 10, unit: 'MINUTES')
             }    
             steps {
                 build(job: 'nguen-iam')
@@ -30,7 +30,7 @@ pipeline {
         stage("Deploy") {
             options {
                 // Timeout counter starts AFTER agent is allocated
-                timeout(time: 4, unit: 'MINUTES')
+                timeout(time: 10, unit: 'MINUTES')
             }    
             steps {
                 build job: 'nguen-deploy', 
