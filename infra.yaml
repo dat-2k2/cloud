@@ -18,7 +18,7 @@
   #   ssh_private_key: 
   #   tf_vars: 
   #   tf_rc:
-  #   provider_tf:
+  #   os_rc:
   tasks:
     - name: Copy .terraformrc
       copy:
@@ -69,7 +69,7 @@
         groups: prod
         ansible_ssh_host: "{{ instance_ip }}"
         ansible_port: 22
-        ansible_user: "{{ debian }}"
+        ansible_user: "debian"
         ansible_ssh_private_key_file: "{{ ssh_private_key }}"
         ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
 
