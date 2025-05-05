@@ -19,6 +19,7 @@
   #   tf_vars: 
   #   tf_rc:
   #   os_rc:
+  #   ip_out:
   tasks:
     - name: Copy .terraformrc
       copy:
@@ -58,6 +59,10 @@
       set_fact:
         instance_ip: "{{ tfdata.outputs.instance_ip.value }}"
 
+    - name: Write IP to file
+      command:
+        cmd: "echo {{ instance_ip }} > {{ ip_out }}"
+        
     - name: Wait for a ssh port become available
       wait_for:
         host: "{{ instance_ip }}"
