@@ -1,0 +1,12 @@
+{
+  "instance_ip": {
+    "sensitive": false,
+    "type": "string",
+    "value": "51.250.12.125"
+  },
+  "internal_ipv4": {
+    "sensitive": false,
+    "type": "string",
+    "value": "192.168.70.30"
+  }
+}

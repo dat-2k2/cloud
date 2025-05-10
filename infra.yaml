@@ -118,7 +118,7 @@
       package:
         name: "{{ docker_prerequisites }}"
         state: present
-        update_cache: yes
+        # update_cache: yes
 
     - name: Add Docker GPG apt key (Debian/Ubuntu)
       # when: ansible_os_family == "Debian"
@@ -138,7 +138,7 @@
       package:
         name: "{{ docker_packages }}"
         state: present
-        update_cache: yes
+        # update_cache: yes
       notify: restart docker
 
     - name: Create Docker config directory #https://docs.docker.com/engine/install/debian/#install-using-the-repository
