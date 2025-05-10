@@ -8,8 +8,8 @@
   hosts: all
   connection: local
   gather_facts: no #first one, no fact
-  collections:
-    - community.general
+  # collections:
+  #   - community.general
   vars:
     tf_dir:
     ssh_private_key: 
@@ -27,7 +27,7 @@
         state: directory
 
     - name: Run tf
-      community.general.terraform:
+      terraform:
         project_path: "{{ tf_dir }}"
         # variables_files: "{{ tf_vars | default(omit) }}"
         state: present
@@ -61,7 +61,7 @@
     - name: Upgrade
       apt:
         upgrade: yes
-        
+
 - name: Install Postgresql
   hosts: prod
   become: yes #sudo
@@ -99,7 +99,13 @@
       shell: |
        sudo -u postgres psql -c 'ALTER SYSTEM SET listen_addresses="{{ postgresql_listen_addresses }}";'
        sudo -u postgres psql -c 'SELECT pg_reload_conf();'
-      
+  rescue:
+    - name: Clean up resources in case of error
+      terraform:
+        project_path: "{{ tf_dir }}"
+        state: absent
+      delegate_to: localhost
+
 - name: Install Docker
   hosts: prod
   become: yes #sudo
@@ -160,3 +166,9 @@
       service:
         name: docker
         state: restarted
+  rescue:
+    - name: Clean up resources in case of error
+      terraform:
+        project_path: "{{ tf_dir }}"
+        state: absent
+      delegate_to: localhost
