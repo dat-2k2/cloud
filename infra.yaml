@@ -66,45 +66,46 @@
   hosts: prod
   become: yes #sudo
   tasks:
+    - block:
     # - name: Update apt cache
     #   apt:
     #     upgrade: yes
     #   when: ansible_os_family == "Debian"
 
-    - name: Set env vars
-      set_fact:
-        postgresql_version: 15 
-        postgresql_service_name: postgresql
-        postgresql_listen_addresses: "*"
-        # cacheable: yes
+      - name: Set env vars
+        set_fact:
+          postgresql_version: 15 
+          postgresql_service_name: postgresql
+          postgresql_listen_addresses: "*"
+          # cacheable: yes
 
-    - name: Install PostgreSQL (Debian/Ubuntu)
-      become: true
-      apt:
-        name:
-          - postgresql-{{ postgresql_version }}
-          - postgresql-contrib
-          - libpq-dev
-          - python3-psycopg2 
-        state: present
-        # update_cache: yes #install -> update cache
+      - name: Install PostgreSQL (Debian/Ubuntu)
+        become: true
+        apt:
+          name:
+            - postgresql-{{ postgresql_version }}
+            - postgresql-contrib
+            - libpq-dev
+            - python3-psycopg2 
+          state: present
+          # update_cache: yes #install -> update cache
 
-    - name: Enable Postgres
-      service:
-        name: "{{ postgresql_service_name }}"
-        state: started
-        enabled: yes
-        
-    - name: Set Postgres to listen on any addresses
-      shell: |
-       sudo -u postgres psql -c 'ALTER SYSTEM SET listen_addresses="{{ postgresql_listen_addresses }}";'
-       sudo -u postgres psql -c 'SELECT pg_reload_conf();'
-  rescue:
-    - name: Clean up resources in case of error
-      terraform:
-        project_path: "{{ tf_dir }}"
-        state: absent
-      delegate_to: localhost
+      - name: Enable Postgres
+        service:
+          name: "{{ postgresql_service_name }}"
+          state: started
+          enabled: yes
+          
+      - name: Set Postgres to listen on any addresses
+        shell: |
+          sudo -u postgres psql -c 'ALTER SYSTEM SET listen_addresses="{{ postgresql_listen_addresses }}";'
+          sudo -u postgres psql -c 'SELECT pg_reload_conf();'
+      rescue:
+        - name: Clean up resources in case of error
+          terraform:
+            project_path: "{{ tf_dir }}"
+            state: absent
+          delegate_to: localhost
 
 - name: Install Docker
   hosts: prod
@@ -128,47 +129,47 @@
       - docker-compose-plugin
 
   tasks:
-    - name: Install required system packages
-      package:
-        name: "{{ docker_prerequisites }}"
-        state: present
-        # update_cache: yes
+    - block:
+      - name: Install required system packages
+        package:
+          name: "{{ docker_prerequisites }}"
+          state: present
+          # update_cache: yes
 
-    - name: Add Docker GPG apt key (Debian/Ubuntu)
-      # when: ansible_os_family == "Debian"
-      apt_key:
-        url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
-        state: present
+      - name: Add Docker GPG apt key (Debian/Ubuntu)
+        # when: ansible_os_family == "Debian"
+        apt_key:
+          url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+          state: present
 
-    - name: Add Docker repository (Debian/Ubuntu)
-      # when: ansible_os_family == "Debian"
-      apt_repository:
-        repo: deb [arch={{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable #https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_vars_facts.html#ansible-facts
-        state: present
-        filename: docker
+      - name: Add Docker repository (Debian/Ubuntu)
+        # when: ansible_os_family == "Debian"
+        apt_repository:
+          repo: deb [arch={{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable #https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_vars_facts.html#ansible-facts
+          state: present
+          filename: docker
 
-    # Install Docker
-    - name: Install Docker and Docker compose
-      package:
-        name: "{{ docker_packages }}"
-        state: present
-        # update_cache: yes
-      notify: restart docker
+      # Install Docker
+      - name: Install Docker and Docker compose
+        package:
+          name: "{{ docker_packages }}"
+          state: present
+          # update_cache: yes
+        notify: restart docker
 
-    - name: Create Docker config directory #https://docs.docker.com/engine/install/debian/#install-using-the-repository
-      file:
-        path: /etc/docker
-        state: directory
-        mode: '0755'
-
+      - name: Create Docker config directory #https://docs.docker.com/engine/install/debian/#install-using-the-repository
+        file:
+          path: /etc/docker
+          state: directory
+          mode: '0755'
+      rescue:
+        - name: Clean up resources in case of error
+          terraform:
+            project_path: "{{ tf_dir }}"
+            state: absent
+          delegate_to: localhost
   handlers:
     - name: restart docker
       service:
         name: docker
         state: restarted
-  rescue:
-    - name: Clean up resources in case of error
-      terraform:
-        project_path: "{{ tf_dir }}"
-        state: absent
-      delegate_to: localhost
