@@ -58,17 +58,17 @@
   hosts: prod
   become: yes #sudo
   tasks:
-    - name: Update apt cache
-      apt:
-        update_cache: yes
-      when: ansible_os_family == "Debian"
+    # - name: Update apt cache
+    #   apt:
+    #     upgrade: yes
+    #   when: ansible_os_family == "Debian"
 
     - name: Set env vars
       set_fact:
         postgresql_version: 15 
         postgresql_service_name: postgresql
         postgresql_listen_addresses: "*"
-        cacheable: yes
+        # cacheable: yes
 
     - name: Install PostgreSQL (Debian/Ubuntu)
       become: true
@@ -79,7 +79,7 @@
           - libpq-dev
           - python3-psycopg2 
         state: present
-        update_cache: yes #install -> update cache
+        # update_cache: yes #install -> update cache
 
     - name: Enable Postgres
       service:
