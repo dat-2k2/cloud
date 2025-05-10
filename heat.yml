@@ -1,0 +1,92 @@
+heat_template_version: 2015-04-30
+
+description: Infrastructure stack with compute, network, and storage resources
+
+parameters:
+  instance_name:
+    type: string
+    description: name of the instance (not the stack)
+
+  flavor_name:
+    type: string
+    description: flavor type of instance (available on openstack server). This is ephemeral disk (not persisted).
+  
+  key:
+    type: string
+    description: name of the SSH key to access the instance (available on openstack server)
+
+  image_name:
+    type: string
+    description: name of the image (available on openstack server)
+
+  net_id:
+    type: string
+    description: id of the network (available on openstack server)
+  
+  volume_name:
+    type: string
+    description: name of the volume 
+  
+  volume_size:
+    type: number
+    description: size in Gb of the volume
+
+resources:
+  security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          port_range_min: 22         # ssh
+          port_range_max: 22         
+        - protocol: tcp
+          port_range_min: 80         # http
+          port_range_max: 80
+        - protocol: tcp
+          port_range_min: 443        # https
+          port_range_max: 443
+
+  server_volume:
+    type: OS::Cinder::Volume
+    properties:
+      name: { get_param: volume_name }
+      size: { get_param: volume_size }
+      image: { get_param: image_name }
+
+  my_instance:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: instance_name}
+      flavor: { get_param: flavor_name }
+      # image: { get_param: image_name }
+      key_name: { get_param: key }
+      networks:
+        - port: { get_resource: server_port }
+      block_device_mapping:
+        - device_name: vda
+          volume_id: { get_resource: server_volume }
+          delete_on_termination: false
+
+  volume_attachment:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      volume_id: { get_resource: server_volume }
+      instance_uuid: { get_resource: my_instance }   
+
+  server_port:
+    depends_on: 
+      - security_group
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: net_id } # sutdents.net ID
+      security_groups:
+        - default
+        - { get_resource: security_group }
+
+outputs:
+  server_ip:
+    description: The public IP address of the server
+    value: { get_attr: [my_instance, first_address] }    
+  volume_id:
+    description: The volume id of the server
+    value: { get_resource: bootable_volume}  

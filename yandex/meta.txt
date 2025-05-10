@@ -1,0 +1,12 @@
+#cloud-config
+apt:
+  primary:
+    - arches: [default]
+      uri: http://mirror.yandex.ru/debian
+users:
+  - name: debian
+    groups: sudo
+    shell: /bin/bash
+    sudo: 'ALL=(ALL) NOPASSWD:ALL'
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINfibnACk/lcHASv0xPemRYH2JX4BJ8xSCd+ET8QX1Ux
