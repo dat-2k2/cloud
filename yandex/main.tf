@@ -18,8 +18,9 @@ resource "yandex_compute_disk" "server_disk" {
   type     = "network-hdd"                  
   zone     = "ru-central1-a"                
   size     = "20"                           
-  image_id = "fd82jsef9gnae091b3jv"         # debian-12-v20250421
-}
+  image_id = "fd85u0rct32prepgjlv0"         # ubuntu-22-04-lts-v20240311 
+  
+} 
 
 data "yandex_vpc_network" "default_network" {
   name = "default"  # use default network

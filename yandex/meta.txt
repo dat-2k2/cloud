@@ -2,9 +2,9 @@
 apt:
   primary:
     - arches: [default]
-      uri: http://mirror.yandex.ru/debian
+      uri: http://mirror.yandex.ru/ubuntu
 users:
-  - name: debian
+  - name: ubuntu
     groups: sudo
     shell: /bin/bash
     sudo: 'ALL=(ALL) NOPASSWD:ALL'

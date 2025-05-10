@@ -1,4 +1,4 @@
-# OS: Debian
+# OS: Ubuntu
 # Requirements:
 # 1. Preinstalled Openstack and params exported to global env.
 # 2. Key for instance was created in advance on openstack cluster. Use StrictHostKeyChecking=no is a must.
@@ -50,7 +50,7 @@
         groups: prod
         ansible_ssh_host: "{{ instance_ip }}"
         ansible_port: 22
-        ansible_user: "debian"
+        ansible_user: "ubuntu"
         ansible_ssh_private_key_file: "{{ ssh_private_key }}"
         ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
 
@@ -129,22 +129,15 @@
 
   tasks:
     - block:
+      - name: Update apt cache
+        apt:
+          update: yes
+
       - name: Install required system packages
         package:
           name: "{{ docker_prerequisites }}"
           state: present
           update_cache: yes
-
-      - name: Add Docker GPG apt key (Debian/Ubuntu)
-        apt_key:
-          url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
-          state: present
-
-      - name: Add Docker repository (Debian/Ubuntu)
-        apt_repository:
-          repo: deb [arch={{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable #https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_vars_facts.html#ansible-facts
-          state: present
-          filename: docker
 
       # Install Docker
       - name: Install Docker and Docker compose
