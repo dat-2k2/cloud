@@ -121,7 +121,7 @@
             - docker
           state: present
           update_cache: yes
-        notify: restart docker
+        notify: reload-daemon
 
       - name: Create Docker config directory #https://docs.docker.com/engine/install/debian/#install-using-the-repository
         file:
@@ -134,8 +134,10 @@
             project_path: "{{ tf_dir }}"
             state: absent
           delegate_to: localhost
+
   handlers:
-    - name: restart docker
-      service:
+    - name: reload-daemon
+      systemd:
         name: docker
         state: restarted
+        daemon_reload: yes
