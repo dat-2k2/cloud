@@ -131,8 +131,8 @@
     - block:
       - name: Update apt cache
         apt:
-          update: yes
-
+          update_cache: yes
+        
       - name: Install required system packages
         package:
           name: "{{ docker_prerequisites }}"

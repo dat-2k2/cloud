@@ -69,7 +69,7 @@
     - block:
       - name: Update apt cache
         apt:
-          update: yes
+          update_cache: yes
 
       - name: Set env vars
         set_fact:
