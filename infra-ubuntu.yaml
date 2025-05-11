@@ -108,20 +108,55 @@
   become: yes #sudo
   # gather_facts: yes
   # remote_user: debian   
+  vars:
+    docker_prerequisites:
+      - ca-certificates
+      - curl
+      
+    docker_packages: #https://docs.docker.com/engine/install/debian/
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin 
+      - docker-compose-plugin
+
   tasks:
     - block:
-      - name: Update apt cache
+      - name: Uninstall
         apt:
+          name: 
+            - docker.io
+            - docker-compose
+            - docker-compose-v2
+            - docker-doc
+            - podman-docker
+          state: absent
           update_cache: yes
+
+      - name: Install required system packages
+        package:
+          name: "{{ docker_prerequisites }}"
+          state: present
+          update_cache: yes
+
+      - name: Add Docker GPG apt key (Debian/Ubuntu)
+        apt_key:
+          url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+          state: present
+
+      - name: Add Docker repository (Debian/Ubuntu)
+        apt_repository:
+          repo: deb [arch={{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable #https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_vars_facts.html#ansible-facts
+          state: present
+          filename: docker
 
       # Install Docker
       - name: Install Docker and Docker compose
-        apt:
-          name: 
-            - docker
+        package:
+          name: "{{ docker_packages }}"
           state: present
           update_cache: yes
-        notify: reload-daemon
+        notify: restart docker
 
       - name: Create Docker config directory #https://docs.docker.com/engine/install/debian/#install-using-the-repository
         file:
