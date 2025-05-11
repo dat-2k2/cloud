@@ -112,7 +112,7 @@
     docker_prerequisites:
       - ca-certificates
       - curl
-      
+
     docker_packages: #https://docs.docker.com/engine/install/debian/
       - docker-ce
       - docker-ce-cli
@@ -158,7 +158,7 @@
           update_cache: yes
         notify: restart docker
 
-      - name: Create Docker config directory #https://docs.docker.com/engine/install/debian/#install-using-the-repository
+      - name: Create Docker config directory #https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
         file:
           path: /etc/docker
           state: directory
@@ -171,7 +171,7 @@
           delegate_to: localhost
 
   handlers:
-    - name: reload-daemon
+    - name: restart docker
       systemd:
         name: docker
         state: restarted
