@@ -73,7 +73,7 @@
 
       - name: Set env vars
         set_fact:
-          postgresql_version: 15 
+          postgresql_version: 14 
           postgresql_service_name: postgresql
           postgresql_listen_addresses: "*"
           cacheable: yes
