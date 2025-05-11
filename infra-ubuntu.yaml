@@ -83,9 +83,6 @@
         apt:
           name:
             - postgresql-{{ postgresql_version }}
-            - postgresql-contrib
-            - libpq-dev
-            - python3-psycopg2 
           state: present
           update_cache: yes #install -> update cache
 
@@ -111,38 +108,17 @@
   become: yes #sudo
   # gather_facts: yes
   # remote_user: debian   
-  vars:
-    docker_prerequisites:
-      - apt-transport-https
-      - ca-certificates
-      - curl
-      - gnupg
-      - lsb-release
-      - software-properties-common
-
-    docker_packages: #https://docs.docker.com/engine/install/debian/
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-buildx-plugin 
-      - docker-compose-plugin
-
   tasks:
     - block:
       - name: Update apt cache
         apt:
           update_cache: yes
 
-      - name: Install required system packages
-        package:
-          name: "{{ docker_prerequisites }}"
-          state: present
-          update_cache: yes
-
       # Install Docker
       - name: Install Docker and Docker compose
-        package:
-          name: "{{ docker_packages }}"
+        apt:
+          name: 
+            - docker
           state: present
           update_cache: yes
         notify: restart docker
