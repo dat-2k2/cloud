@@ -1,0 +1,66 @@
+---
+# Spring Boot Application Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nguen-iam-deploy
+  namespace: nguen-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nguen-iam-deploy
+  template:
+    metadata:
+      labels:
+        app: nguen-iam-deploy
+    spec:
+      containers:
+        - name: nguen-iam
+          image: cr.yandex/crpa7u0l5f06ilvf2qfg/nguen-iam:latest  # Replace with your Docker image
+          env:
+            - name: IAM_DB_USERNAME 
+              value: 'admin'
+            - name: IAM_DB_PASSWORD 
+              value: '1234'
+            - name: IAM_DB_PORT 
+              value: '5432'
+            - name: IAM_DB_NAME 
+              value: 'iam'
+            - name: IAM_DB_HOST 
+              value: 'nguen-iam-db-service.nguen-ns.svc.cluster.local'
+          ports:
+            - containerPort: 8081
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+---
+# Spring Boot Application Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: nguen-iam-service
+  namespace: nguen-ns
+spec:
+  selector:
+    app: nguen-iam-deploy
+  ports:
+    - port: 80
+      targetPort: 8081
+  type: ClusterIP

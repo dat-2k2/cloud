@@ -1,0 +1,64 @@
+---
+# PostgreSQL PersistentVolumeClaim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nguen-iam-db-pvc
+  namespace: nguen-ns
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# PostgreSQL Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: nguen-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nguen-iam-db
+  template:
+    metadata:
+      labels:
+        app: nguen-iam-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER 
+              value: admin
+            - name: POSTGRES_PASSWORD 
+              value: '1234'
+            - name: POSTGRES_DB
+              value: iam
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+              subPath: data #important
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: nguen-iam-db-pvc
+---
+# PostgreSQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: nguen-iam-db-service
+  namespace: nguen-ns
+spec:
+  selector:
+    app: nguen-iam-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+  type: ClusterIP
