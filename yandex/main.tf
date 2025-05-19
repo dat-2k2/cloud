@@ -57,6 +57,15 @@ resource "yandex_vpc_security_group_rule" "rule_http" {
   v4_cidr_blocks    = ["0.0.0.0/0"] 
 }
 
+resource "yandex_vpc_security_group_rule" "rule_tomcat" {
+  security_group_binding = yandex_vpc_security_group.server_group.id 
+  direction         = "ingress"
+  description       = "HTTP"
+  protocol          = "TCP"
+  port              = 8080
+  v4_cidr_blocks    = ["0.0.0.0/0"] 
+}
+
 resource "yandex_vpc_security_group_rule" "rule_https" {
   security_group_binding = yandex_vpc_security_group.server_group.id 
   direction         = "ingress"
