@@ -40,6 +40,16 @@ resource "openstack_networking_secgroup_rule_v2" "security_group_rule_http" {
   security_group_id = openstack_networking_secgroup_v2.security_group.id
 }
 
+resource "openstack_networking_secgroup_rule_v2" "security_group_rule_tomcat" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = 8080
+  port_range_max    = 8080
+  remote_ip_prefix  = "0.0.0.0/0"
+  security_group_id = openstack_networking_secgroup_v2.security_group.id
+}
+
 resource "openstack_networking_secgroup_rule_v2" "security_group_rule_https" {
   direction         = "ingress"
   ethertype         = "IPv4"
